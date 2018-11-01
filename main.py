@@ -46,7 +46,7 @@ def checkIfLatest(bookName, onlineChapter):
 
 
 def getFromWebsite(bookName, url):
-    bookInfo = {'bookName': '', 'latestChapter': '', 'updateTime': ''}
+    bookInfo = {'bookName': '', 'latestChapter': '', 'updateTime': '', 'latestUrl':''}
     novel = requests.get(url, timeout=60)
     novel.encoding = "gbk"
     soup = BeautifulSoup(novel.text, "html.parser")
@@ -54,18 +54,23 @@ def getFromWebsite(bookName, url):
     # 更新时间在第一个last
     updateInfo = last[0].contents[0]
     updateTime = re.search('\d.*$',updateInfo).group(0)
-    print('updateTime is ' + updateTime)
+    # print('updateTime is ' + updateTime)
     # 章节在第二个last
     lastText = last[1].contents[1]
     # 最新章节网址
-    lastUrl = lastText.get('href')
+    latestUrl = lastText.get('href')
     # 最新章节名
-    chapterTitle = lastText.get_text()
-    logging.info('Last url is ' + lastUrl)
-    logging.info('Last title is ' + chapterTitle)
+    latestChapter = lastText.get_text()
+
     bookInfo['bookName'] = bookName
-    bookInfo['latestChapter'] = chapterTitle
-    # bookInfo['updateTime'] = chapterTitle
+    bookInfo['latestChapter'] = latestChapter
+    bookInfo['updateTime'] = updateTime
+    bookInfo['latestUrl'] = latestUrl
+
+    logging.info('bookName is ' + bookInfo['bookName'])
+    logging.info('latestChapter is ' + bookInfo['latestChapter'])
+    logging.info('updateTime is ' + bookInfo['updateTime'])
+    logging.info('latestUrl is ' + bookInfo['latestUrl'])
 
     return bookInfo
 
