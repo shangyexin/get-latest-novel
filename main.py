@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
-                    # filename='shengxu.log',
-                    # filemode='w')
+                    filename='get-latest-novel.log',
+                    filemode='w'
                     )
 
 headers = {
@@ -121,7 +121,7 @@ def runMoniror():
             checkUpdate(bookName, bookUrl)
             time.sleep(1)
         # 每5分钟查询一次
-        time.sleep(10)
+        time.sleep(360)
 
 
 if __name__ == '__main__':
