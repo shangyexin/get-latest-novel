@@ -15,7 +15,7 @@ headers = {
 
 baseOriginUrl = 'https://www.biqiuge.com'
 
-updatePostUrl = 'http://35.234.33.9//api/novelupdate'
+updatePostUrl = 'http://35.234.33.9/api/novelupdate'
 
 
 def parseConfig():
@@ -25,12 +25,15 @@ def parseConfig():
     return novelList
 
 
-def checkIfLatest(bookName, onlineChapter):
+def checkIfLatest(bookInfo):
+    onlineChapter = bookInfo['latestChapter']
+    bookName = bookInfo['bookName']
+
     recordFile = './temp/' + bookName + '.txt'
     try:
         with open(recordFile, "r") as f:
             localChapter = f.read()
-            print(localChapter)
+            # print(localChapter)
             # 没有更新
             if (localChapter == onlineChapter):
                 logging.info('%s 没有更新' % bookName)
@@ -38,6 +41,8 @@ def checkIfLatest(bookName, onlineChapter):
             else:
                 with open(recordFile, "w") as f:
                     f.write(onlineChapter)
+                # 提交给微信公众号服务器
+                postToWechat(bookInfo)
     # 第一次没有最新章节记录时
     except IOError as e:
         logging.error(e)
@@ -59,13 +64,15 @@ def getFromWebsite(bookName, url):
     lastText = last[1].contents[1]
     # 最新章节网址
     latestUrl = lastText.get('href')
+    # 完整网址
+    completeUrl = baseOriginUrl + latestUrl
     # 最新章节名
     latestChapter = lastText.get_text()
 
     bookInfo['bookName'] = bookName
     bookInfo['latestChapter'] = latestChapter
     bookInfo['updateTime'] = updateTime
-    bookInfo['latestUrl'] = latestUrl
+    bookInfo['latestUrl'] = completeUrl
 
     logging.info('bookName is ' + bookInfo['bookName'])
     logging.info('latestChapter is ' + bookInfo['latestChapter'])
@@ -78,15 +85,29 @@ def getFromWebsite(bookName, url):
 def checkUpdate(bookName, url):
     try:
         bookInfo = getFromWebsite(bookName, url)
-        # checkIfLatest(bookName, onlineChapter);
+        checkIfLatest(bookInfo);
 
     except Exception as e:
         now = time.strftime("%Y-%m-%d %X", time.localtime())
         logging.error("%s  获取 %s 最新章节报错" % now, bookName)
 
 
-def postToWechat(bookName, chapterName, updateTime, content):
-    pass
+def postToWechat(bookInfo):
+    tryCount = 0
+    # 重试3次 每次间隔60s
+    while (tryCount < 3):
+        try:
+            response = requests.post(updatePostUrl, data=bookInfo)
+            if(response.text == 'success'):
+                logging.info('Post to wechat server success!')
+                break
+            else:
+                logging.error('Post to wechat server failed, response text is %s' % response.text)
+                tryCount= tryCount + 1
+        except Exception as e:
+            logging.error(e)
+            tryCount = tryCount + 1
+        time.sleep(60)
 
 
 def runMoniror():
